@@ -177,8 +177,8 @@ class cust_txt_col(BaseEstimator, TransformerMixin):
 
 if __name__ == '__main__':
     num_train = 74067
-    df_all = pd.read_csv('df_all.csv', encoding="ISO-8859-1", index_col=0)
-    df_train = df_all.iloc[:num_train] # !!!
+    df_all = pd.read_csv('df_all_typo_fixed.csv', encoding="ISO-8859-1", index_col=0)
+    df_train = df_all.iloc[:num_train]
     df_test = df_all.iloc[num_train:]
     id_test = df_test['id']
     y_train = df_train['relevance'].values
@@ -191,8 +191,7 @@ if __name__ == '__main__':
     tsvd = TruncatedSVD(n_components=10, random_state=2016)
 
     import xgboost
-    xgb = xgboost.XGBClassifier(objective='multi:softprob', learning_rate=0.025,
-                                colsample_bytree=0.85, subsample=0.95,
+    xgb = xgboost.XGBClassifier(objective='reg:linear',
                                 seed=2016)
 
     clf = pipeline.Pipeline([
@@ -212,7 +211,7 @@ if __name__ == '__main__':
                 'cst': 1.0,
                 'txt1': 0.5,
                 'txt2': 0.25,
-                'txt3': 1.0,
+                'txt3': 0.5,
                 'txt4': 0.5
             },
             # n_jobs = -1
@@ -221,7 +220,12 @@ if __name__ == '__main__':
         # ('xgb', xgb)])
 
     param_grid = {'rfr__n_estimators': [500], 'rfr__max_features': [10], 'rfr__max_depth': [20]}
-    # param_grid = {'xgb__n_estimators': [500], 'xgb__max_depth': [3]}
+    # param_grid = {'xgb__n_estimators': [300, 500],
+    #               'xgb__max_depth': [3, 5, 7],
+    #               'xgb__learning_rate': [0.05],
+    #               'xgb__colsample_bytree': [0.9, 0.95],
+    #               'xgb__subsample': [0.8, 0.85, 0.9]
+    #               }
     model = grid_search.GridSearchCV(estimator=clf, param_grid=param_grid, n_jobs=1, cv=4, verbose=20, scoring=RMSE)
     model.fit(X_train, y_train)
 
@@ -245,5 +249,6 @@ if __name__ == '__main__':
 
     y_pred = model.predict(X_test)
     pd.DataFrame({"id": id_test, "relevance": y_pred}).to_csv('submission.csv', index=False)
+    # pd.DataFrame({"xgb": model.predict(X_train)}).to_csv('stacking_xgb.csv', index=False)
 
     print("--- Training & Testing: %s minutes ---" % round(((time.time() - start_time) / 60), 2))
