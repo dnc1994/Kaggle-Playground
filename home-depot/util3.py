@@ -1,70 +1,24 @@
-# -*- encoding:utf-8 -*-
+# -*- encoding:ISO-8859-1 -*-
 import warnings
 warnings.filterwarnings("ignore")
+import time
+import numpy as np
+import pandas as pd
 from nltk.stem.porter import *
 stemmer = PorterStemmer()
 import re
 import random
 random.seed(2016)
 
-stop_w = ['for', 'xbi', 'and', 'in', 'th', 'on', 'sku', 'with', 'what', 'from', 'that', 'less', 'er', 'ing']  # 'electr','paint','pipe','light','kitchen','wood','outdoor','door','bathroom'
+stop_w = ['for', 'xbi', 'and', 'in', 'th', 'on', 'sku', 'with', 'what', 'from', 'that', 'less', 'er', 'ing'] #'electr','paint','pipe','light','kitchen','wood','outdoor','door','bathroom'
 strNum = {'zero': 0, 'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5, 'six': 6, 'seven': 7, 'eight': 8, 'nine': 9}
 
-
-def stem_str(s):
-    s = s.decode('utf-8')
-    s = re.sub(ur'(\w)\.([A-Z])', ur'\1 \2', s)
-    s = s.lower()
-    s = s.replace(u'  ', u' ')
-    s = s.replace(u', ', u'')
-    s = s.replace(u'$', u' ')
-    s = s.replace(u'?', u' ')
-    s = s.replace(u'-', u' ')
-    s = s.replace(u'//', u'/')
-    s = s.replace(u'..', u'.')
-    s = s.replace(u' / u', ' ')
-    s = s.replace(u' \\ u', ' ')
-    s = s.replace(u'.', u' . ')
-    s = re.sub(ur'(^\.|/)', ur'', s)
-    s = re.sub(ur'(\.|/)$', ur'', s)
-    s = re.sub(ur'([0-9])([a-z])', ur'\1 \2', s)
-    s = re.sub(ur'([a-z])([0-9])', ur'\1 \2', s)
-    s = s.replace(u' x ', u' xbi ')
-    s = re.sub(ur'([a-z])( *)\.( *)([a-z])', ur'\1 \4', s)
-    s = re.sub(ur'([a-z])( *)/( *)([a-z])', ur'\1 \4', s)
-    s = s.replace(u'*', u' xbi ')
-    s = s.replace(u' by ', u' xbi ')
-    s = re.sub(ur'([0-9])( *)\.( *)([0-9])', ur'\1.\4', s)
-    s = re.sub(ur"([0-9]+)( *)(inches|inch|in|')\.?", ur'\1in. ', s)
-    s = re.sub(ur'([0-9]+)( *)(foot|feet|ft|'')\.?', ur'\1ft. ', s)
-    s = re.sub(ur'([0-9]+)( *)(pounds|pound|lbs|lb)\.?', ur'\1lb. ', s)
-    s = re.sub(ur'([0-9]+)( *)(square|sq) ?\.?(feet|foot|ft)\.?', ur'\1sq.ft. ', s)
-    s = re.sub(ur'([0-9]+)( *)(cubic|cu) ?\.?(feet|foot|ft)\.?', ur'\1cu.ft. ', s)
-    s = re.sub(ur'([0-9]+)( *)(gallons|gallon|gal)\.?', ur'\1gal. ', s)
-    s = re.sub(ur'([0-9]+)( *)(ounces|ounce|oz)\.?', ur'\1oz. ', s)
-    s = re.sub(ur'([0-9]+)( *)(centimeters|cm)\.?', ur'\1cm. ', s)
-    s = re.sub(ur'([0-9]+)( *)(milimeters|mm)\.?', ur'\1mm. ', s)
-    s = s.replace(u'Â°', u' degrees ')
-    s = re.sub(ur'([0-9]+)( *)(degrees|degree)\.?', ur'\1deg. ', s)
-    s = s.replace(u' v ', u' volts ')
-    s = re.sub(ur'([0-9]+)( *)(volts|volt)\.?', ur'\1volt. ', s)
-    s = re.sub(ur'([0-9]+)( *)(watts|watt)\.?', ur'\1watt. ', s)
-    s = re.sub(ur'([0-9]+)( *)(amperes|ampere|amps|amp)\.?', ur'\1amp. ', s)
-    s = s.replace(u'  ', u' ')
-    s = s.replace(u' . ', u' ')
-    s = (u' ').join([str(strNum[z]) if z in strNum else z for z in s.split(u' ')])
-    s = (u' ').join([stemmer.stem(z) for z in s.split(u' ')])
-    s = s.lower()
-    s = s.encode('utf-8')
-    return s
-
-
-def stem_str_(s):
+def str_stem(s): 
     if isinstance(s, str):
-        s = re.sub(r"(\w)\.([A-Z])", r"\1 \2", s)  #Split words with a.A
+        s = re.sub(r"(\w)\.([A-Z])", r"\1 \2", s) #Split words with a.A
         s = s.lower()
         s = s.replace("  "," ")
-        s = s.replace(",","")  #could be number / segment later
+        s = s.replace(",","") #could be number / segment later
         s = s.replace("$"," ")
         s = s.replace("?"," ")
         s = s.replace("-"," ")
@@ -92,7 +46,7 @@ def stem_str_(s):
         s = re.sub(r"([0-9]+)( *)(ounces|ounce|oz)\.?", r"\1oz. ", s)
         s = re.sub(r"([0-9]+)( *)(centimeters|cm)\.?", r"\1cm. ", s)
         s = re.sub(r"([0-9]+)( *)(milimeters|mm)\.?", r"\1mm. ", s)
-        s = s.replace("Ð±Ñƒ"," degrees ")
+        s = s.replace("¡ã"," degrees ")
         s = re.sub(r"([0-9]+)( *)(degrees|degree)\.?", r"\1deg. ", s)
         s = s.replace(" v "," volts ")
         s = re.sub(r"([0-9]+)( *)(volts|volt)\.?", r"\1volt. ", s)
@@ -101,9 +55,9 @@ def stem_str_(s):
         s = s.replace("  "," ")
         s = s.replace(" . "," ")
         #s = (" ").join([z for z in s.split(" ") if z not in stop_w])
-
         s = (" ").join([str(strNum[z]) if z in strNum else z for z in s.split(" ")])
         s = (" ").join([stemmer.stem(z) for z in s.split(" ")])
+        
         s = s.lower()
         s = s.replace("toliet","toilet")
         s = s.replace("airconditioner","air conditioner")
@@ -154,7 +108,6 @@ def segmentit(s, txt_arr, t):
             r.append(st[i:])
     return r
 
-# number of common words between the two
 def str_common_word(str1, str2):
     words, cnt = str1.split(), 0
     for word in words:
@@ -172,10 +125,8 @@ def str_whole_word(str1, str2, i_):
             cnt += 1
             i_ += len(str1)
     return cnt
-
-
+    
 from typo_dict import typo_dict
-
 
 def correct_typo(s):
     # global typo_count
@@ -184,21 +135,3 @@ def correct_typo(s):
         return typo_dict[s]
     else:
         return s
-
-
-def sum_value(array):
-    return sum(filter(None, array))
-
-
-def max_value(array):
-    try:
-        return max(filter(None, array))
-    except:
-        return 0
-
-
-def min_value(array):
-    try:
-        return min(filter(None, array))
-    except:
-        return 0

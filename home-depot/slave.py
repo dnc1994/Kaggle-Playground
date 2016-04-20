@@ -93,13 +93,15 @@ class cust_regression_vals(BaseEstimator, TransformerMixin):
 
     def transform(self, hd_searches):
         d_col_drops = ['id', 'product_uid', 'relevance',
-                       'search_term', 'search_term_stemmed',
-                       'product_title', 'product_title_stemmed',
-                       'product_description', 'product_description_stemmed',
-                       'brand', 'brand_stemmed'
+                       'search_term', #'search_term_stemmed',
+                       'product_title', #'product_title_stemmed',
+                       'product_description', #'product_description_stemmed',
+                       'brand', #'brand_stemmed'
+                       'product_info', 'attr'
                        ]
-        hd_searches = hd_searches.drop(d_col_drops, axis=1).values
-        return hd_searches
+        
+        d_col_drops = list(filter(lambda x: x in hd_searches.columns.tolist(), d_col_drops))
+        return hd_searches.drop(d_col_drops, axis=1).values
 
 
 class cust_txt_col(BaseEstimator, TransformerMixin):
@@ -115,7 +117,7 @@ class cust_txt_col(BaseEstimator, TransformerMixin):
 
 if __name__ == '__main__':
     num_train = 74067
-    df_all = pd.read_csv('df_start_over.csv', encoding='ISO-8859-1', index_col=0)
+    df_all = pd.read_csv('df_lev_dist_more_jaccard.csv', encoding='ISO-8859-1', index_col=0)
     df_train = df_all.iloc[:num_train]
     df_test = df_all.iloc[num_train:]
     id_test = df_test['id']
@@ -124,24 +126,35 @@ if __name__ == '__main__':
     X_test = df_test[:]
     print("--- Features Set: %s minutes ---" % round(((time.time() - start_time) / 60), 2))
 
-    rfr = RandomForestRegressor(n_jobs=1, random_state=2016, verbose=1)
+    rfr = RandomForestRegressor(n_jobs=1, random_state=2016, verbose=1, oob_score=True)
     tfidf = TfidfVectorizer(ngram_range=(1, 2), stop_words='english')
     tsvd = TruncatedSVD(n_components=10, random_state=2016)
 
     import xgboost
-    xgb = xgboost.XGBClassifier(objective='reg:linear',
-                                seed=2016)
+    # xgb = xgboost.XGBClassifier(objective='reg:linear',
+    #                            seed=2016)
+    xgb = xgboost.XGBRegressor(
+        learning_rate=0.05,
+        silent=False,
+        objective='reg:linear',
+        subsample=0.85, 
+        colsample_bytree=0.9,
+        reg_alpha=0.5,
+        reg_lambda=1,
+        seed=2016, 
+        missing=None
+    )
 
     clf = pipeline.Pipeline([
         ('union', FeatureUnion(
             transformer_list=[
                             ('cst', cust_regression_vals()),
                             ('txt1', pipeline.Pipeline(
-                                [('s1', cust_txt_col(key='search_term_stemmed')), ('tfidf1', tfidf), ('tsvd1', tsvd)])),
+                                [('s1', cust_txt_col(key='search_term')), ('tfidf1', tfidf), ('tsvd1', tsvd)])),
                             ('txt2', pipeline.Pipeline(
-                                [('s2', cust_txt_col(key='product_title_stemmed')), ('tfidf2', tfidf), ('tsvd2', tsvd)])),
+                                [('s2', cust_txt_col(key='product_title')), ('tfidf2', tfidf), ('tsvd2', tsvd)])),
                             ('txt3', pipeline.Pipeline(
-                                [('s3', cust_txt_col(key='product_description_stemmed')), ('tfidf3', tfidf), ('tsvd3', tsvd)]))
+                                [('s3', cust_txt_col(key='product_description')), ('tfidf3', tfidf), ('tsvd3', tsvd)]))
                             ],
             transformer_weights={
                 'cst': 1.0,
@@ -154,9 +167,10 @@ if __name__ == '__main__':
         ('rfr', rfr)])
         # ('xgb', xgb)])
 
-    param_grid = {'rfr__n_estimators': [500], 'rfr__max_features': [10], 'rfr__max_depth': [20]}
-    # param_grid = {'xgb__n_estimators': [300, 500],
-    #               'xgb__max_depth': [3, 5, 7],
+    param_grid = {'rfr__n_estimators': [500], 'rfr__max_features': [10] }#, 'rfr__max_depth': [20]}
+    # param_grid = {'xgb__n_estimators': [500],
+    #               'xgb__max_depth': [3, 5],
+    #              }
     #               'xgb__learning_rate': [0.05],
     #               'xgb__colsample_bytree': [0.9, 0.95],
     #               'xgb__subsample': [0.8, 0.85, 0.9]
@@ -178,7 +192,16 @@ if __name__ == '__main__':
     # exit(0)
 
     y_pred = model.predict(X_test)
+    for i in range(len(y_pred)):
+        if y_pred[i] < 1.0:
+            y_pred[i] = 1.0
+        if y_pred[i] > 3.0:
+            y_pred[i] = 3.0
     pd.DataFrame({"id": id_test, "relevance": y_pred}).to_csv('submission.csv', index=False)
     # pd.DataFrame({"xgb": model.predict(X_train)}).to_csv('stacking_xgb.csv', index=False)
 
+    importances = model.best_estimator_.named_steps['rfr'].feature_importances_[:]
+    print('Feature Importances')
+    print(importances)
+    
     print("--- Training & Testing: %s minutes ---" % round(((time.time() - start_time) / 60), 2))

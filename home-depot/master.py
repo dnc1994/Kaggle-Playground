@@ -1,9 +1,9 @@
-# -*- encoding:ISO-8859-1 -*-
-# todo: 1. typo dict 2. stacking 3. word2vec/probase
+# -*- encoding:utf-8 -*-
 import warnings
 warnings.filterwarnings("ignore")
+import re
 import time
-start_time = time.time()
+import random
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
 from sklearn import pipeline, grid_search
@@ -14,15 +14,11 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics import mean_squared_error, make_scorer
 from nltk.stem.porter import *
 stemmer = PorterStemmer()
-import re
-import random
-random.seed(2016)
+
 
 # 'electr','paint','pipe','light','kitchen','wood','outdoor','door','bathroom'
-stop_w = ['for', 'xbi', 'and', 'in', 'th', 'on', 'sku',
-          'with', 'what', 'from', 'that', 'less', 'er', 'ing']
-strNum = {'zero': 0, 'one': 1, 'two': 2, 'three': 3, 'four': 4,
-          'five': 5, 'six': 6, 'seven': 7, 'eight': 8, 'nine': 9}
+stop_w = ['for', 'xbi', 'and', 'in', 'th', 'on', 'sku', 'with', 'what', 'from', 'that', 'less', 'er', 'ing']
+strNum = {'zero': 0, 'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5, 'six': 6, 'seven': 7, 'eight': 8, 'nine': 9}
 
 
 def str_stem(s):
@@ -159,7 +155,10 @@ class cust_regression_vals(BaseEstimator, TransformerMixin):
 
     def transform(self, hd_searches):
         d_col_drops = ['id', 'relevance', 'search_term', 'product_title',
-                       'product_description', 'product_info', 'attr', 'brand']
+                       'product_description', 'brand',
+                       'lev_dist_to_product_title_min', 'lev_dist_to_product_title_max',
+                       'lev_dist_to_product_title_sum'
+                       ]
         hd_searches = hd_searches.drop(d_col_drops, axis=1).values
         return hd_searches
 
@@ -176,8 +175,11 @@ class cust_txt_col(BaseEstimator, TransformerMixin):
 
 
 if __name__ == '__main__':
+    random.seed(2016)
+    start_time = time.time()
+
     num_train = 74067
-    df_all = pd.read_csv('df_all_typo_fixed.csv', encoding="ISO-8859-1", index_col=0)
+    df_all = pd.read_csv('df_.csv', index_col=0)
     df_train = df_all.iloc[:num_train]
     df_test = df_all.iloc[num_train:]
     id_test = df_test['id']
