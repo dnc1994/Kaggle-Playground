@@ -4,10 +4,18 @@ import numpy as np
 import pandas as pd
 from sklearn.cross_validation import KFold
 from sklearn.ensemble import RandomForestRegressor, ExtraTreesRegressor, GradientBoostingRegressor
-from sklearn.base import BaseEstimator
+from sklearn import grid_search
+from sklearn.metrics import mean_squared_error, make_scorer
+from xgboost import XGBRegressor
 
 
-class Ensemble(BaseEstimator):
+def mean_squared_error_(ground_truth, predictions):
+    return mean_squared_error(ground_truth, predictions) ** 0.5
+
+RMSE = make_scorer(mean_squared_error_, greater_is_better=False)
+
+
+class Ensemble(object):
     def __init__(self, n_folds, stacker, base_models):
         self.n_folds = n_folds
         self.stacker = stacker
@@ -97,29 +105,52 @@ class Ensemble(BaseEstimator):
 
         print('--- Base Models Trained: %s minutes ---' % round(((time.time() - start_time) / 60), 2))
 
-        clf = self.stacker
-        clf.fit(S_train, y)
+        # param_grid = {
+        #     'n_estimators': [100],
+        #     'learning_rate': [0.45, 0.05, 0.055],
+        #     'subsample': [0.72, 0.75, 0.78]
+        # }
+        param_grid = {
+            'n_estimators': [100],
+            'learning_rate': [0.05],
+            'subsample': [0.75]
+        }
+        grid = grid_search.GridSearchCV(estimator=self.stacker, param_grid=param_grid, n_jobs=1, cv=5, verbose=20, scoring=RMSE)
+        grid.fit(S_train, y)
+
+        # a little memo
+        message = 'to determine local CV score of #28'
+
+        try:
+            print('Param grid:')
+            print(param_grid)
+            print('Best Params:')
+            print(grid.best_params_)
+            print('Best CV Score:')
+            print(-grid.best_score_)
+            print('Best estimator:')
+            print(grid.best_estimator_)
+            print(message)
+        except:
+            pass
 
         print('--- Stacker Trained: %s minutes ---' % round(((time.time() - start_time) / 60), 2))
 
-        y_pred = clf.predict(S_test)[:]
+        y_pred = grid.predict(S_test)[:]
 
         return y_pred
 
 
-def main(input='df_new_419_3.csv'):
+def main(input='df_new_422.csv'):
     df_all = pd.read_csv(input, encoding='ISO-8859-1', index_col=0)
     num_train = 74067
     df_train = df_all.iloc[:num_train]
     df_test = df_all.iloc[num_train:]
 
-    # df_train = df_all.iloc[:50]
-    # df_test = df_all.iloc[50:100]
-
     id_test = df_test['id']
     y_train = df_train['relevance'].values
 
-    cols_to_drop = ['id', 'product_uid', 'relevance', 'search_term', 'product_title', 'product_description', 'brand', 'attr', 'product_info']
+    cols_to_drop = ['id', 'relevance']
     for col in cols_to_drop:
         try:
             df_train.drop(col, axis=1, inplace=True)
@@ -136,24 +167,27 @@ def main(input='df_new_419_3.csv'):
     base_models = [
         RandomForestRegressor(
             n_jobs=1, random_state=2016, verbose=1,
-            n_estimators=500, max_features=10
+            n_estimators=500, max_features=12
         ),
         ExtraTreesRegressor(
             n_jobs=1, random_state=2016, verbose=1,
-            n_estimators=500, max_features=10
+            n_estimators=500, max_features=12
         ),
         GradientBoostingRegressor(
             random_state=2016, verbose=1,
-            n_estimators=300, max_features=10, max_depth=10,
+            n_estimators=500, max_features=12, max_depth=8,
             learning_rate=0.05, subsample=0.8
+        ),
+        XGBRegressor(
+            seed=2016,
+            n_estimators=200, max_depth=8,
+            learning_rate=0.05, subsample=0.8, colsample_bytree=0.85
         )
     ]
     ensemble = Ensemble(
         n_folds=5,
         stacker=GradientBoostingRegressor(
-            random_state=2016, verbose=1,
-            n_estimators=200,
-            learning_rate=0.05, subsample=0.8
+            random_state=2016, verbose=1
         ),
         base_models=base_models
     )
