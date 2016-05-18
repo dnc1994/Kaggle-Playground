@@ -16,18 +16,18 @@ def mean_squared_error_(ground_truth, predictions):
 RMSE = make_scorer(mean_squared_error_, greater_is_better=False)
 
 
-def main(input='df_new_419_3.csv'):
+def main(input='df_new_423.csv'):
     start_time = time.time()
 
     df_all = pd.read_csv(input, encoding='ISO-8859-1', index_col=0)
     num_train = 74067
     df_train = df_all.iloc[:num_train]
     df_test = df_all.iloc[num_train:]
-    
+
     id_test = df_test['id']
     y_train = df_train['relevance'].values
 
-    cols_to_drop = ['id', 'product_uid', 'relevance', 'search_term', 'product_title', 'product_description', 'brand', 'attr', 'product_info']
+    cols_to_drop = ['id', 'relevance']
     for col in cols_to_drop:
         try:
             df_train.drop(col, axis=1, inplace=True)
@@ -43,11 +43,10 @@ def main(input='df_new_419_3.csv'):
     # print(X_train.columns.tolist())
 
     # exit(0)
-
     rfr = RandomForestRegressor(n_jobs=1, random_state=2016, verbose=1)
 
-    param_grid = {'n_estimators': [500], 'max_features': [10]}
-    model = grid_search.GridSearchCV(estimator=rfr, param_grid=param_grid, n_jobs=5, cv=10, verbose=20, scoring=RMSE)
+    param_grid = {'n_estimators': [500], 'max_features': [10, 12, 14]}
+    model = grid_search.GridSearchCV(estimator=rfr, param_grid=param_grid, n_jobs=1, cv=10, verbose=20, scoring=RMSE)
     model.fit(X_train, y_train)
 
     print('--- Grid Search Completed: %s minutes ---' % round(((time.time() - start_time) / 60), 2))
