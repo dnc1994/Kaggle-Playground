@@ -1,13 +1,10 @@
 # Kaggle-Playground
-Preparing for serious Kaggle competitions!
 
-## Overview
+After I finished the Home Depot competition, I wrote [a summary](https://dnc1994.com/2016/05/rank-10-percent-in-first-kaggle-competition-en/) as a beginners' guide to Kaggle. It got retweeted by Kaggle's official account.
 
-- `home-depot`: I finished this one with a ranking of 98th out of 2125 teams (~ 5%). You can find out how I preprocessed the dataset, constructed features, trained different models and built my final ensemble. I also wrote [a summary](https://dnc1994.com/2016/05/rank-10-percent-in-first-kaggle-competition-en/) for this as a comprehensive beginner guide. Feel free to suggest how to improve it.
-
-- `santander`: This is the first Kaggle competition I started. It got very difficult in the halfway therefore I decided to switch to Home Depot. Nothing useful there.
-
-- `sf-crime`: Literally a 'playground' dataset on Kaggle. I used this as an introduction to Kaggle competitions.
+In this repo you can find details about how I preprocessed the dataset, constructed features, trained different models and finally built the stacked ensemble. Main files are `features.ipynb` and `ensemble.py`.
+ 
+Feel free to suggest how to improve it!
 
 ## Acknowledgements
 
