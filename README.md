@@ -1,6 +1,6 @@
 # Kaggle-Playground
 
-After I finished the Home Depot competition, I wrote [a summary](https://dnc1994.com/2016/05/rank-10-percent-in-first-kaggle-competition-en/) as a beginners' guide to Kaggle. It got retweeted by Kaggle's official account.
+After I finished the Home Depot competition, I wrote [a summary](https://dnc1994.github.io/2016/05/rank-10-percent-in-first-kaggle-competition-en/) as a beginners' guide to Kaggle. It got retweeted by Kaggle's official account.
 
 In this repo you can find details about how I preprocessed the dataset, constructed features, trained different models and finally built the stacked ensemble. Main files are `features.ipynb` and `ensemble.py`.
  
